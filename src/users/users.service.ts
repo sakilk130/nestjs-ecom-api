@@ -58,6 +58,7 @@ export class UsersService {
   }
 
   create(createUserDto: CreateUserDto) {
+    console.log(createUserDto);
     return 'This action adds a new user';
   }
 
@@ -74,6 +75,7 @@ export class UsersService {
   }
 
   update(id: number, updateUserDto: UpdateUserDto) {
+    console.log(updateUserDto);
     return `This action updates a #${id} user`;
   }
 
