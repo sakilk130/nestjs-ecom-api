@@ -1,4 +1,4 @@
-import { Product } from 'src/products/entities/product.entity';
+import { Category } from 'src/categories/entities/category.entity';
 import { User } from 'src/users/entities/user.entity';
 import {
   Column,
@@ -6,14 +6,13 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
-  OneToMany,
   PrimaryGeneratedColumn,
   Timestamp,
   UpdateDateColumn,
 } from 'typeorm';
 
 @Entity()
-export class Category {
+export class Product {
   @PrimaryGeneratedColumn()
   id: number;
 
@@ -23,15 +22,28 @@ export class Category {
   @Column()
   description: string;
 
+  @Column({ type: 'decimal', default: 0, precision: 10, scale: 2 })
+  price: number;
+
+  @Column()
+  stock: number;
+
+  @Column('simple-array')
+  images: string[];
+
   @Column()
   added_by: number;
 
-  @ManyToOne(() => User, (user) => user.categories)
+  @Column()
+  category_id: number;
+
+  @ManyToOne(() => User, (user) => user.products)
   @JoinColumn({ name: 'added_by' })
   added_by_info: User;
 
-  @OneToMany(() => Product, (product) => product.category_id)
-  products: Product[];
+  @ManyToOne(() => Category, (cat) => cat.products)
+  @JoinColumn({ name: 'category_id' })
+  category_id_info: Category;
 
   @CreateDateColumn()
   created_at: Timestamp;

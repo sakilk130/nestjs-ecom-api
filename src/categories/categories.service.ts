@@ -35,7 +35,7 @@ export class CategoriesService {
   }
 
   async findOne(id: number) {
-    const category: any = await this.categoryRepo.findOne({
+    const category = await this.categoryRepo.findOne({
       where: { id },
       relations: {
         added_by_info: true,
