@@ -27,18 +27,62 @@ export class ProductsService {
   }
 
   findAll() {
-    return `This action returns all products`;
+    return this.productRepo.find({
+      relations: {
+        category_id_info: true,
+        added_by_info: true,
+      },
+      select: {
+        category_id_info: {
+          id: true,
+          title: true,
+          description: true,
+        },
+        added_by_info: {
+          id: true,
+          name: true,
+        },
+      },
+    });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} product`;
+  async findOne(id: number) {
+    const product = await this.productRepo.findOne({
+      where: {
+        id,
+      },
+      relations: {
+        category_id_info: true,
+        added_by_info: true,
+      },
+      select: {
+        category_id_info: {
+          id: true,
+          title: true,
+          description: true,
+        },
+        added_by_info: {
+          id: true,
+          name: true,
+        },
+      },
+    });
+    if (!product) {
+      throw new NotFoundException('Product not found');
+    }
+    return product;
   }
 
-  update(id: number, updateProductDto: UpdateProductDto) {
-    return `This action updates a #${id} product`;
+  async update(id: number, updateProductDto: UpdateProductDto) {
+    const product = await this.findOne(id);
+    if (!product) throw new NotFoundException('Product not found');
+    Object.assign(product, updateProductDto);
+    return await this.productRepo.save(product);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} product`;
+  async remove(id: number) {
+    const product = await this.findOne(id);
+    if (!product) throw new NotFoundException('Product not found');
+    return this.productRepo.remove(product);
   }
 }
