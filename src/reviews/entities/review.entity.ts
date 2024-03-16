@@ -34,7 +34,7 @@ export class Review {
 
   @ManyToOne(() => Product, (product) => product.reviews)
   @JoinColumn({ name: 'product_id' })
-  product: Product;
+  product_id_info: Product;
 
   @CreateDateColumn()
   created_at: Timestamp;
