@@ -73,10 +73,22 @@ export class ProductsService {
     return product;
   }
 
-  async update(id: number, updateProductDto: UpdateProductDto) {
+  async update(
+    id: number,
+    updateProductDto: UpdateProductDto,
+    currentUser: User,
+  ) {
     const product = await this.findOne(id);
     if (!product) throw new NotFoundException('Product not found');
     Object.assign(product, updateProductDto);
+    product.added_by = currentUser.id;
+    if (updateProductDto.category_id) {
+      const category = await this.categoryService.findOne(
+        updateProductDto.category_id,
+      );
+      if (!category) throw new NotFoundException('Category not found');
+      product.category_id = category.id;
+    }
     return await this.productRepo.save(product);
   }
 

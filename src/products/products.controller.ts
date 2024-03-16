@@ -46,8 +46,9 @@ export class ProductsController {
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateProductDto: UpdateProductDto,
+    @CurrentUser() currentUser: User,
   ) {
-    return this.productsService.update(id, updateProductDto);
+    return this.productsService.update(id, updateProductDto, currentUser);
   }
 
   @UseGuards(AuthenticationGuard, AuthorizeGuard([Roles.ADMIN]))
