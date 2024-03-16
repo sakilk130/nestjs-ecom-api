@@ -1,4 +1,5 @@
 import { Category } from 'src/categories/entities/category.entity';
+import { Review } from 'src/reviews/entities/review.entity';
 import { User } from 'src/users/entities/user.entity';
 import {
   Column,
@@ -6,6 +7,7 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   Timestamp,
   UpdateDateColumn,
@@ -44,6 +46,9 @@ export class Product {
   @ManyToOne(() => Category, (cat) => cat.products)
   @JoinColumn({ name: 'category_id' })
   category_id_info: Category;
+
+  @OneToMany(() => Review, (review) => review.product_id)
+  reviews: Review[];
 
   @CreateDateColumn()
   created_at: Timestamp;
