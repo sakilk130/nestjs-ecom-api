@@ -25,21 +25,51 @@ export class ReviewsService {
       createReviewDto.product_id,
     );
     if (!product) throw new NotFoundException('Product not found');
-    const findExitingReview = await this.reviewRepo.findOne({
+    let review = await this.reviewRepo.findOne({
       where: {
         user_id: currentUser.id,
         product_id: createReviewDto.product_id,
       },
     });
-    if (findExitingReview)
-      throw new BadRequestException('Already reviewed this product');
-    const review = await this.reviewRepo.create(createReviewDto);
-    review.user_id = currentUser.id;
+    if (review) {
+      review.comments = createReviewDto.comments;
+      review.ratings = createReviewDto.ratings;
+    } else {
+      review = await this.reviewRepo.create(createReviewDto);
+      review.user_id = currentUser.id;
+      review.product_id = product.id;
+    }
     return await this.reviewRepo.save(review);
   }
 
   findAll() {
     return this.reviewRepo.find({
+      relations: {
+        user_id_info: true,
+        product_id_info: true,
+      },
+      select: {
+        user_id_info: {
+          id: true,
+          name: true,
+          email: true,
+        },
+        product_id_info: {
+          id: true,
+          title: true,
+          description: true,
+          price: true,
+        },
+      },
+    });
+  }
+
+  async findAllByProduct(productId: number) {
+    await this.productService.findOne(productId);
+    return this.reviewRepo.find({
+      where: {
+        product_id: productId,
+      },
       relations: {
         user_id_info: true,
         product_id_info: true,
