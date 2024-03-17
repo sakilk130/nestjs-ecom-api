@@ -31,6 +31,7 @@ export class ProductsService {
       relations: {
         category_id_info: true,
         added_by_info: true,
+        reviews: true,
       },
       select: {
         category_id_info: {
@@ -41,6 +42,11 @@ export class ProductsService {
         added_by_info: {
           id: true,
           name: true,
+        },
+        reviews: {
+          id: true,
+          ratings: true,
+          comments: true,
         },
       },
     });

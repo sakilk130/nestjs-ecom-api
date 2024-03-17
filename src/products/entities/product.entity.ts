@@ -1,4 +1,5 @@
 import { Category } from 'src/categories/entities/category.entity';
+import { OrdersProducts } from 'src/orders/entities/orders-products.entity';
 import { Review } from 'src/reviews/entities/review.entity';
 import { User } from 'src/users/entities/user.entity';
 import {
@@ -47,8 +48,11 @@ export class Product {
   @JoinColumn({ name: 'category_id' })
   category_id_info: Category;
 
-  @OneToMany(() => Review, (review) => review.product_id)
+  @OneToMany(() => Review, (review) => review.product_id_info)
   reviews: Review[];
+
+  @OneToMany(() => OrdersProducts, (ordersProduct) => ordersProduct.product_id)
+  products: OrdersProducts[];
 
   @CreateDateColumn()
   created_at: Timestamp;
