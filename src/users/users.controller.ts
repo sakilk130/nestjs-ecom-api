@@ -25,8 +25,13 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post('signup')
-  async signup(@Body() createUserDto: UserSignupDto): Promise<{ user: User }> {
-    return { user: await this.usersService.signup(createUserDto) };
+  async signup(@Body() createUserDto: UserSignupDto) {
+    const data = await this.usersService.signup(createUserDto);
+    return {
+      status: 200,
+      message: 'Sign up successfully',
+      data,
+    };
   }
 
   @Post('signin')
@@ -34,8 +39,12 @@ export class UsersController {
     const user = await this.usersService.signin(signInUserDto);
     const accessToken = await this.usersService.accessToken(user);
     return {
-      user,
-      access_token: accessToken,
+      status: 200,
+      message: 'Sign up successfully',
+      data: {
+        user,
+        access_token: accessToken,
+      },
     };
   }
 

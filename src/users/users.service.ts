@@ -20,16 +20,24 @@ export class UsersService {
     private readonly userRepository: Repository<User>,
   ) {}
 
-  async signup(createUserDto: UserSignupDto): Promise<User> {
-    const userExits = await this.findUserByEmail(createUserDto.email);
-    if (userExits) {
-      throw new BadRequestException('Email is already taken');
+  async signup(createUserDto: UserSignupDto) {
+    try {
+      const userExits = await this.findUserByEmail(createUserDto.email);
+      if (userExits) {
+        throw new BadRequestException('Email is already taken');
+      }
+      createUserDto.password = await hash(createUserDto.password, 10);
+      let user = this.userRepository.create(createUserDto);
+      user = await this.userRepository.save(user);
+      delete user.password;
+      const generateToken = await this.accessToken(user);
+      return {
+        user: user,
+        access_token: generateToken,
+      };
+    } catch (error) {
+      throw error;
     }
-    createUserDto.password = await hash(createUserDto.password, 10);
-    let user = this.userRepository.create(createUserDto);
-    user = await this.userRepository.save(user);
-    delete user.password;
-    return user;
   }
 
   async signin(signInUserDto: UserSignInDto) {
