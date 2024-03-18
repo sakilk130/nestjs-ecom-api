@@ -32,11 +32,14 @@ export class Order {
   @Column({ nullable: true })
   delivered_at: Date;
 
-  @Column()
+  @Column({ nullable: true })
   updated_by: number;
 
   @Column()
   shipping_id: number;
+
+  @Column()
+  user_id: number;
 
   @ManyToOne(() => User, (user) => user.orders_updated_by)
   @JoinColumn({ name: 'updated_by' })
@@ -50,6 +53,10 @@ export class Order {
     cascade: true,
   })
   products: OrdersProducts[];
+
+  @ManyToOne(() => User, (user) => user.orders)
+  @JoinColumn({ name: 'user_id' })
+  user_id_info: User;
 
   @CreateDateColumn()
   created_at: Timestamp;

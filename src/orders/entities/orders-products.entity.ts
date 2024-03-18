@@ -22,10 +22,10 @@ export class OrdersProducts {
   @Column()
   product_quantity: number;
 
-  @Column()
+  @Column({ nullable: true })
   order_id: number;
 
-  @Column()
+  @Column({ nullable: true })
   product_id: number;
 
   @ManyToOne(() => Order, (order) => order.products)

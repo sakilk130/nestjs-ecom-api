@@ -47,6 +47,9 @@ export class User {
   @OneToMany(() => Order, (order) => order.updated_by)
   orders_updated_by: Order[];
 
+  @OneToMany(() => Order, (order) => order.user_id)
+  orders: Order[];
+
   @CreateDateColumn()
   created_at: Timestamp;
 
