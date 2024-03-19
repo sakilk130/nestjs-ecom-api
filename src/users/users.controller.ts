@@ -19,6 +19,7 @@ import { UserSignInDto } from './dto/user-signin.dto';
 import { UserSignupDto } from './dto/user-signup.dto';
 import { User } from './entities/user.entity';
 import { UsersService } from './users.service';
+import { PasswordChangeDto } from './dto/password-change-dto';
 
 @Controller('users')
 export class UsersController {
@@ -48,38 +49,77 @@ export class UsersController {
     };
   }
 
+  @UseGuards(AuthenticationGuard, AuthorizeGuard([Roles.ADMIN]))
   @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  async create(@Body() createUserDto: CreateUserDto) {
+    return {
+      status: 200,
+      message: 'User created successfully',
+      data: await this.usersService.create(createUserDto),
+    };
   }
 
   @UseGuards(AuthenticationGuard, AuthorizeGuard([Roles.ADMIN]))
   @Get()
-  findAll() {
-    return this.usersService.findAll();
+  async findAll() {
+    return {
+      status: 200,
+      message: 'Success',
+      data: await this.usersService.findAll(),
+    };
   }
 
   @Get('single/:id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.usersService.findOne(id);
+  async findOneById(@Param('id', ParseIntPipe) id: number) {
+    return {
+      status: 200,
+      message: 'Success',
+      data: await this.usersService.findOneById(id),
+    };
   }
 
-  @Patch(':id')
-  update(
-    @Param('id', ParseIntPipe) id: number,
+  @Patch('me')
+  async update(
     @Body() updateUserDto: UpdateUserDto,
+    @CurrentUser() currentUser: User,
   ) {
-    return this.usersService.update(+id, updateUserDto);
+    return {
+      status: 200,
+      message: 'Updated successfully',
+      data: await this.usersService.update(currentUser, updateUserDto),
+    };
   }
 
+  @UseGuards(AuthenticationGuard, AuthorizeGuard([Roles.ADMIN]))
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.usersService.remove(+id);
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    return {
+      status: 200,
+      message: 'Delete successfully',
+      data: await this.usersService.remove(id),
+    };
   }
 
   @UseGuards(AuthenticationGuard)
   @Get('me')
   getProfile(@CurrentUser() currentUser: User) {
-    return currentUser;
+    return {
+      status: 200,
+      message: 'Success',
+      data: currentUser,
+    };
+  }
+
+  @UseGuards(AuthenticationGuard)
+  @Patch('password-change')
+  async passwordChange(
+    @Body() passwordChange: PasswordChangeDto,
+    @CurrentUser() currentUser: User,
+  ) {
+    return {
+      status: 200,
+      message: 'Password changed successfully',
+      data: await this.usersService.changePassword(passwordChange, currentUser),
+    };
   }
 }
