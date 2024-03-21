@@ -1,4 +1,5 @@
-import { IsEmail, IsOptional, IsString } from 'class-validator';
+import { IsEmail, IsEnum, IsOptional, IsString } from 'class-validator';
+import { Status } from 'src/utility/enums/status-enum';
 
 export class UpdateUserDto {
   @IsOptional()
@@ -8,4 +9,8 @@ export class UpdateUserDto {
   @IsOptional()
   @IsEmail({}, { message: 'Please provide a valid email' })
   email: string;
+
+  @IsOptional()
+  @IsEnum(Status)
+  status: Status;
 }

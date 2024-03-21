@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { FindManyOptions, ILike, Repository } from 'typeorm';
 import { hash, compare } from 'bcrypt';
 import { sign } from 'jsonwebtoken';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -14,6 +14,8 @@ import { UserSignupDto } from './dto/user-signup.dto';
 import { UserSignInDto } from './dto/user-signin.dto';
 import { Roles } from 'src/utility/enums/user-roles.enum';
 import { PasswordChangeDto } from './dto/password-change-dto';
+import { Status } from 'src/utility/enums/status-enum';
+import { UserListSearchQueryDto } from './dto/user-list-search-query-dto';
 
 @Injectable()
 export class UsersService {
@@ -47,6 +49,9 @@ export class UsersService {
       if (!findUser) {
         throw new BadRequestException('Invalid Email / Password');
       }
+      if (findUser.status === Status.INACTIVE) {
+        throw new BadRequestException('Your account is currently inactive');
+      }
       const comparePassword = await compare(
         signInUserDto.password,
         findUser.password,
@@ -55,6 +60,7 @@ export class UsersService {
         throw new BadRequestException('Invalid Email / Password');
       }
       delete findUser.password;
+      delete findUser.deleted_at;
       return findUser;
     } catch (error) {
       throw error;
@@ -63,24 +69,78 @@ export class UsersService {
 
   async create(createUserDto: CreateUserDto) {
     try {
-      const userExits = await this.findUserByEmail(createUserDto.email);
-      if (userExits) {
+      const userExits = await this.userRepository.findOne({
+        where: {
+          email: createUserDto.email,
+        },
+        withDeleted: true,
+      });
+      if (userExits.status === Status.INACTIVE) {
+        throw new BadRequestException('Your account is currently inactive');
+      }
+      if (userExits && !userExits.deleted_at) {
         throw new BadRequestException('Email is already taken');
       }
       createUserDto.password = await hash(createUserDto.password, 10);
-      let user = this.userRepository.create(createUserDto);
-      user = await this.userRepository.save(user);
+      let user: User | null = null;
+      if (userExits.deleted_at) {
+        Object.assign(userExits, { ...createUserDto, deleted_at: null });
+        user = await this.userRepository.save(userExits);
+      } else {
+        user = this.userRepository.create(createUserDto);
+        user = await this.userRepository.save(user);
+      }
       delete user.password;
+      delete user.deleted_at;
       return user;
     } catch (error) {
       throw error;
     }
   }
 
-  async findAll() {
+  async findAll(query: UserListSearchQueryDto) {
     try {
-      return await this.userRepository.find();
+      query = {
+        ...query,
+        page: Number(query.page || 1),
+        page_size: Number(query.page_size || 10),
+      };
+      const options: FindManyOptions<User> = {
+        skip: (query.page - 1) * query.page_size,
+        take: query.page_size,
+        where: [],
+        select: [
+          'id',
+          'name',
+          'email',
+          'roles',
+          'status',
+          'created_at',
+          'updated_at',
+        ],
+      };
+      if (query.search_term) {
+        options.where = [
+          {
+            name: ILike(`%${query.search_term.toLowerCase()}%`),
+          },
+          {
+            email: ILike(`%${query.search_term.toLowerCase()}%`),
+          },
+        ];
+      }
+      const [users, totalUsers] =
+        await this.userRepository.findAndCount(options);
+      const totalPage = Math.ceil(totalUsers / query.page_size);
+      const metaData = {
+        current_page: query.page,
+        page_size: query.page_size,
+        total: totalUsers,
+        total_page: totalPage,
+      };
+      return { users, meta_data: metaData };
     } catch (error) {
+      console.log(error);
       throw error;
     }
   }
@@ -97,22 +157,13 @@ export class UsersService {
     }
   }
 
-  async findOneByEmail(email: string) {
-    try {
-      const user = await this.userRepository.findOneBy({ email });
-      if (!user) throw new NotFoundException('User not found');
-      return user;
-    } catch (error) {
-      throw error;
-    }
-  }
-
   async update(currentUser: User, updateUserDto: UpdateUserDto) {
     try {
       const user = await this.findOneById(currentUser.id);
       if (user.email !== updateUserDto.email && updateUserDto.email) {
-        const exitingEmail = await this.userRepository.findOneBy({
-          email: updateUserDto.email,
+        const exitingEmail = await this.userRepository.findOne({
+          where: { email: updateUserDto.email },
+          withDeleted: true,
         });
         if (exitingEmail) {
           throw new BadRequestException('Email is already taken');
@@ -121,6 +172,7 @@ export class UsersService {
       Object.assign(user, updateUserDto);
       return await this.userRepository.save(user);
     } catch (error) {
+      console.log(error);
       throw error;
     }
   }
@@ -128,15 +180,12 @@ export class UsersService {
   async remove(id: number) {
     try {
       const user = await this.findOneById(id);
-      return await this.userRepository.remove(user);
-    } catch (error) {
-      throw error;
-    }
-  }
-
-  async findUserByEmail(email: string) {
-    try {
-      return await this.userRepository.findOneBy({ email });
+      const deletedUser = await this.userRepository.softDelete(user.id);
+      if (deletedUser.affected > 0) {
+        return user;
+      } else {
+        throw new BadRequestException('User delete failed');
+      }
     } catch (error) {
       throw error;
     }

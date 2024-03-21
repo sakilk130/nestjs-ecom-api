@@ -2,10 +2,12 @@ import { Category } from 'src/categories/entities/category.entity';
 import { Order } from 'src/orders/entities/order.entity';
 import { Product } from 'src/products/entities/product.entity';
 import { Review } from 'src/reviews/entities/review.entity';
+import { Status } from 'src/utility/enums/status-enum';
 import { Roles } from 'src/utility/enums/user-roles.enum';
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -50,9 +52,19 @@ export class User {
   @OneToMany(() => Order, (order) => order.user_id)
   orders: Order[];
 
+  @Column({
+    type: 'enum',
+    enum: Status,
+    default: Status.ACTIVE,
+  })
+  status: Status;
+
   @CreateDateColumn()
   created_at: Timestamp;
 
   @UpdateDateColumn()
   updated_at: Timestamp;
+
+  @DeleteDateColumn({ nullable: true })
+  deleted_at: Timestamp;
 }
