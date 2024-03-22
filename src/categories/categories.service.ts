@@ -1,10 +1,14 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { User } from 'src/users/entities/user.entity';
+import { Repository } from 'typeorm';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-import { InjectRepository } from '@nestjs/typeorm';
 import { Category } from './entities/category.entity';
-import { Repository } from 'typeorm';
-import { User } from 'src/users/entities/user.entity';
 
 @Injectable()
 export class CategoriesService {
@@ -14,57 +18,62 @@ export class CategoriesService {
   ) {}
 
   async create(createCategoryDto: CreateCategoryDto, currentUser: User) {
-    const category = this.categoryRepo.create(createCategoryDto);
-    category.added_by_info = currentUser;
-    return await this.categoryRepo.save(category);
+    try {
+      const category = this.categoryRepo.create(createCategoryDto);
+      category.added_by = currentUser.id;
+      return await this.categoryRepo.save(category);
+    } catch (error) {
+      throw error;
+    }
   }
 
-  findAll() {
-    return this.categoryRepo.find({
-      relations: {
-        added_by_info: true,
-      },
-      select: {
-        added_by_info: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
-    });
+  async findAll() {
+    try {
+      return this.categoryRepo.find({});
+    } catch (error) {
+      throw error;
+    }
   }
 
   async findOne(id: number) {
-    const category = await this.categoryRepo.findOne({
-      where: { id },
-      relations: {
-        added_by_info: true,
-      },
-      select: {
-        added_by_info: {
-          id: true,
-          name: true,
-          email: true,
-        },
-      },
-    });
-
-    if (!category) {
-      throw new NotFoundException('Category not found');
+    try {
+      const category = await this.categoryRepo.findOne({
+        where: { id },
+      });
+      if (!category) {
+        throw new NotFoundException('Category not found');
+      }
+      return category;
+    } catch (error) {
+      throw error;
     }
-    return category;
   }
 
   async update(id: number, updateCategoryDto: Partial<UpdateCategoryDto>) {
-    const category = await this.findOne(id);
-    if (!category) throw new NotFoundException('Category not found.');
-    Object.assign(category, updateCategoryDto);
-    return await this.categoryRepo.save(category);
+    try {
+      const category = await this.findOne(id);
+      if (!category) {
+        throw new NotFoundException('Category not found.');
+      }
+      Object.assign(category, updateCategoryDto);
+      return await this.categoryRepo.save(category);
+    } catch (error) {
+      throw error;
+    }
   }
 
   async remove(id: number) {
-    const category = await this.findOne(id);
-    if (!category) throw new NotFoundException('Category not found');
-    return await this.categoryRepo.remove(category);
+    try {
+      const category = await this.findOne(id);
+      if (!category) throw new NotFoundException('Category not found');
+      const deletedCategory = await this.categoryRepo.softDelete(category.id);
+      if (deletedCategory.affected > 0) {
+        return category;
+      } else {
+        throw new BadRequestException('Category delete failed');
+      }
+    } catch (error) {
+      throw error;
+    }
   }
 }

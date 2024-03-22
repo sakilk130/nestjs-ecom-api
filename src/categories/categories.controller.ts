@@ -24,35 +24,63 @@ export class CategoriesController {
 
   @UseGuards(AuthenticationGuard, AuthorizeGuard([Roles.ADMIN]))
   @Post()
-  create(
+  async create(
     @Body() createCategoryDto: CreateCategoryDto,
     @CurrentUser() currentUser: User,
   ) {
-    return this.categoriesService.create(createCategoryDto, currentUser);
+    const data = await this.categoriesService.create(
+      createCategoryDto,
+      currentUser,
+    );
+    return {
+      status: 200,
+      message: 'Category created successfully',
+      data,
+    };
   }
 
   @Get()
-  findAll() {
-    return this.categoriesService.findAll();
+  async findAll() {
+    const categories = await this.categoriesService.findAll();
+    return {
+      status: 200,
+      message: 'Success',
+      data: categories,
+    };
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.categoriesService.findOne(id);
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    const category = await this.categoriesService.findOne(id);
+    return {
+      status: 200,
+      message: 'Success',
+      data: category,
+    };
   }
 
   @UseGuards(AuthenticationGuard, AuthorizeGuard([Roles.ADMIN]))
   @Patch(':id')
-  update(
+  async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateCategoryDto: UpdateCategoryDto,
   ) {
-    return this.categoriesService.update(id, updateCategoryDto);
+    const category = await this.categoriesService.update(id, updateCategoryDto);
+    return {
+      status: 200,
+      message: 'Category udated successfully',
+      data: category,
+    };
   }
 
   @UseGuards(AuthenticationGuard, AuthorizeGuard([Roles.ADMIN]))
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.categoriesService.remove(id);
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    const category = await this.categoriesService.remove(id);
+    return {
+      status: 200,
+      message: 'Category deleted successfully',
+      data: category,
+    };
   }
 }

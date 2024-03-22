@@ -1,9 +1,3 @@
-import { Category } from 'src/categories/entities/category.entity';
-import { Order } from 'src/orders/entities/order.entity';
-import { Product } from 'src/products/entities/product.entity';
-import { Review } from 'src/reviews/entities/review.entity';
-import { Status } from 'src/utility/enums/status-enum';
-import { Roles } from 'src/utility/enums/user-roles.enum';
 import {
   Column,
   CreateDateColumn,
@@ -14,6 +8,12 @@ import {
   Timestamp,
   UpdateDateColumn,
 } from 'typeorm';
+import { Category } from 'src/categories/entities/category.entity';
+import { Order } from 'src/orders/entities/order.entity';
+import { Product } from 'src/products/entities/product.entity';
+import { Review } from 'src/reviews/entities/review.entity';
+import { Status } from 'src/utility/enums/status-enum';
+import { Roles } from 'src/utility/enums/user-roles.enum';
 
 @Entity()
 export class User {
