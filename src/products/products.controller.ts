@@ -24,16 +24,24 @@ export class ProductsController {
 
   @UseGuards(AuthenticationGuard, AuthorizeGuard([Roles.ADMIN]))
   @Post()
-  create(
+  async create(
     @Body() createProductDto: CreateProductDto,
-    @CurrentUser() cucrrentUser: User,
+    @CurrentUser() currentUser: User,
   ) {
-    return this.productsService.create(createProductDto, cucrrentUser);
+    return {
+      status: 200,
+      message: 'Product created successfully',
+      data: await this.productsService.create(createProductDto, currentUser),
+    };
   }
 
   @Get()
-  findAll() {
-    return this.productsService.findAll();
+  async findAll() {
+    return {
+      status: 200,
+      message: 'Success',
+      data: await this.productsService.findAll(),
+    };
   }
 
   @Get(':id')

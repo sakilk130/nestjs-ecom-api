@@ -1,10 +1,7 @@
-import { Category } from 'src/categories/entities/category.entity';
-import { OrdersProducts } from 'src/orders/entities/orders-products.entity';
-import { Review } from 'src/reviews/entities/review.entity';
-import { User } from 'src/users/entities/user.entity';
 import {
   Column,
   CreateDateColumn,
+  DeleteDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
@@ -13,6 +10,11 @@ import {
   Timestamp,
   UpdateDateColumn,
 } from 'typeorm';
+import { Category } from 'src/categories/entities/category.entity';
+import { OrdersProducts } from 'src/orders/entities/orders-products.entity';
+import { Review } from 'src/reviews/entities/review.entity';
+import { User } from 'src/users/entities/user.entity';
+import { Status } from 'src/utility/enums/status-enum';
 
 @Entity()
 export class Product {
@@ -21,6 +23,9 @@ export class Product {
 
   @Column()
   title: string;
+
+  @Column({ unique: true })
+  slug: string;
 
   @Column()
   description: string;
@@ -54,9 +59,19 @@ export class Product {
   @OneToMany(() => OrdersProducts, (ordersProduct) => ordersProduct.product_id)
   products: OrdersProducts[];
 
+  @Column({
+    type: 'enum',
+    enum: Status,
+    default: Status.ACTIVE,
+  })
+  status: Status;
+
   @CreateDateColumn()
   created_at: Timestamp;
 
   @UpdateDateColumn()
   updated_at: Timestamp;
+
+  @DeleteDateColumn()
+  deleted_at: Timestamp;
 }

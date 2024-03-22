@@ -1,11 +1,17 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import slugify from 'slugify';
+import { Repository } from 'typeorm';
+import { InjectRepository } from '@nestjs/typeorm';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { User } from 'src/users/entities/user.entity';
-import { InjectRepository } from '@nestjs/typeorm';
 import { Product } from './entities/product.entity';
-import { Repository } from 'typeorm';
 import { CategoriesService } from 'src/categories/categories.service';
+import { Status } from 'src/utility/enums/status-enum';
 
 @Injectable()
 export class ProductsService {
@@ -16,37 +22,39 @@ export class ProductsService {
   ) {}
 
   async create(createProductDto: CreateProductDto, currentUser: User) {
-    const category = await this.categoryService.findOne(
-      createProductDto.category_id,
-    );
-    if (!category) throw new NotFoundException('Category not found');
-    const product = await this.productRepo.create(createProductDto);
-    product.added_by_info = currentUser;
-    product.category_id_info = category;
-    return this.productRepo.save(product);
+    try {
+      const category = await this.categoryService.findOne(
+        createProductDto.category_id,
+      );
+      if (!category || category.status === Status.INACTIVE) {
+        throw new NotFoundException('Category not found');
+      }
+      const slug = await this.generateUniqueSlug(createProductDto.title);
+      if (!slug) {
+        throw new BadRequestException('Product save failed');
+      }
+      const product = await this.productRepo.create({
+        ...createProductDto,
+        slug,
+      });
+      product.added_by = currentUser.id;
+      product.category_id = category.id;
+      return await this.productRepo.save(product);
+    } catch (error) {
+      throw error;
+    }
   }
 
   findAll() {
     return this.productRepo.find({
       relations: {
         category_id_info: true,
-        added_by_info: true,
-        reviews: true,
       },
       select: {
         category_id_info: {
           id: true,
           title: true,
           description: true,
-        },
-        added_by_info: {
-          id: true,
-          name: true,
-        },
-        reviews: {
-          id: true,
-          ratings: true,
-          comments: true,
         },
       },
     });
@@ -102,5 +110,32 @@ export class ProductsService {
     const product = await this.findOne(id);
     if (!product) throw new NotFoundException('Product not found');
     return this.productRepo.remove(product);
+  }
+
+  async generateUniqueSlug(title: string): Promise<string> {
+    try {
+      let slug = slugify(title, { lower: true });
+      const existingProduct = await this.productRepo.findOne({
+        where: { slug },
+      });
+      if (existingProduct) {
+        let count = 1;
+        while (true) {
+          const newSlug = `${slug}-${count}`;
+          const slugExists = await this.productRepo.findOne({
+            where: { slug: newSlug },
+          });
+          if (!slugExists) {
+            slug = newSlug;
+            break;
+          }
+          count++;
+        }
+        return slug;
+      }
+      return slug;
+    } catch (error) {
+      throw error;
+    }
   }
 }
