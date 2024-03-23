@@ -8,6 +8,7 @@ import {
   Delete,
   UseGuards,
   ParseIntPipe,
+  Query,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -17,6 +18,7 @@ import { AuthorizeGuard } from 'src/utility/guards/authorization.guard';
 import { Roles } from 'src/utility/enums/user-roles.enum';
 import { CurrentUser } from 'src/utility/decorators/current-user.decorator';
 import { User } from 'src/users/entities/user.entity';
+import { ProductListSearchQueryDto } from './dto/product-list-search-query-dto';
 
 @Controller('products')
 export class ProductsController {
@@ -36,32 +38,48 @@ export class ProductsController {
   }
 
   @Get()
-  async findAll() {
+  async findAll(@Query() filter: ProductListSearchQueryDto) {
     return {
       status: 200,
       message: 'Success',
-      data: await this.productsService.findAll(),
+      data: await this.productsService.findAll(filter),
     };
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.productsService.findOne(id);
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    return {
+      status: 200,
+      message: 'Success',
+      data: await this.productsService.findOne(id),
+    };
   }
 
   @UseGuards(AuthenticationGuard, AuthorizeGuard([Roles.ADMIN]))
   @Patch(':id')
-  update(
+  async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateProductDto: UpdateProductDto,
     @CurrentUser() currentUser: User,
   ) {
-    return this.productsService.update(id, updateProductDto, currentUser);
+    return {
+      status: 200,
+      message: 'Product update successfully',
+      data: await this.productsService.update(
+        id,
+        updateProductDto,
+        currentUser,
+      ),
+    };
   }
 
   @UseGuards(AuthenticationGuard, AuthorizeGuard([Roles.ADMIN]))
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.productsService.remove(+id);
+  async remove(@Param('id', ParseIntPipe) id: number) {
+    return {
+      status: 200,
+      message: 'Product deleted successfully',
+      data: await this.productsService.remove(id),
+    };
   }
 }

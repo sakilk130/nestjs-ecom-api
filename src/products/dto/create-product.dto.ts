@@ -1,11 +1,14 @@
 import {
   IsArray,
+  IsEnum,
   IsNotEmpty,
   IsNumber,
+  IsOptional,
   IsPositive,
   IsString,
   Min,
 } from 'class-validator';
+import { Status } from 'src/utility/enums/status-enum';
 
 export class CreateProductDto {
   @IsNotEmpty({ message: 'Title can not be empty' })
@@ -37,4 +40,8 @@ export class CreateProductDto {
   @IsNotEmpty({ message: 'Category can not be empty' })
   @IsNumber({}, { message: 'Category id should be a number' })
   category_id: number;
+
+  @IsOptional()
+  @IsEnum(Status)
+  status: Status;
 }
