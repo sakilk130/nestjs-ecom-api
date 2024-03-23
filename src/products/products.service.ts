@@ -125,6 +125,7 @@ export class ProductsService {
         },
         relations: {
           category_id_info: true,
+          reviews: true,
         },
         select: {
           category_id_info: {

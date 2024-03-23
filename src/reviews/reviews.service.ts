@@ -11,6 +11,7 @@ import { Review } from './entities/review.entity';
 import { Repository } from 'typeorm';
 import { ProductsService } from 'src/products/products.service';
 import { Roles } from 'src/utility/enums/user-roles.enum';
+import { Status } from 'src/utility/enums/status-enum';
 
 @Injectable()
 export class ReviewsService {
@@ -21,98 +22,127 @@ export class ReviewsService {
   ) {}
 
   async create(createReviewDto: CreateReviewDto, currentUser: User) {
-    const product = await this.productService.findOne(
-      createReviewDto.product_id,
-    );
-    if (!product) throw new NotFoundException('Product not found');
-    let review = await this.reviewRepo.findOne({
-      where: {
-        user_id: currentUser.id,
-        product_id: createReviewDto.product_id,
-      },
-    });
-    if (review) {
-      review.comments = createReviewDto.comments;
-      review.ratings = createReviewDto.ratings;
-    } else {
-      review = await this.reviewRepo.create(createReviewDto);
-      review.user_id = currentUser.id;
-      review.product_id = product.id;
+    try {
+      const product = await this.productService.findOne(
+        createReviewDto.product_id,
+      );
+      console.log(product);
+      if (!product || product.status === Status.INACTIVE)
+        throw new NotFoundException('Product not found');
+      let review = await this.reviewRepo.findOne({
+        where: {
+          user_id: currentUser.id,
+          product_id: createReviewDto.product_id,
+        },
+      });
+      if (review) {
+        review.comments = createReviewDto.comments;
+        review.ratings = createReviewDto.ratings;
+      } else {
+        review = await this.reviewRepo.create(createReviewDto);
+        review.user_id = currentUser.id;
+        review.product_id = product.id;
+      }
+      return await this.reviewRepo.save(review);
+    } catch (error) {
+      throw error;
     }
-    return await this.reviewRepo.save(review);
   }
 
-  findAll() {
-    return this.reviewRepo.find({
-      relations: {
-        user_id_info: true,
-        product_id_info: true,
-      },
-      select: {
-        user_id_info: {
-          id: true,
-          name: true,
-          email: true,
+  async findAll() {
+    try {
+      return await this.reviewRepo.find({
+        where: {
+          product_id_info: {
+            status: Status.ACTIVE,
+          },
         },
-        product_id_info: {
-          id: true,
-          title: true,
-          description: true,
-          price: true,
+        relations: {
+          user_id_info: true,
+          product_id_info: true,
         },
-      },
-    });
+        select: {
+          user_id_info: {
+            id: true,
+            name: true,
+            email: true,
+          },
+          product_id_info: {
+            id: true,
+            title: true,
+            description: true,
+            price: true,
+            status: true,
+          },
+        },
+      });
+    } catch (error) {
+      throw error;
+    }
   }
 
   async findAllByProduct(productId: number) {
-    await this.productService.findOne(productId);
-    return this.reviewRepo.find({
-      where: {
-        product_id: productId,
-      },
-      relations: {
-        user_id_info: true,
-        product_id_info: true,
-      },
-      select: {
-        user_id_info: {
-          id: true,
-          name: true,
-          email: true,
+    try {
+      await this.productService.findOne(productId);
+      return this.reviewRepo.find({
+        where: {
+          product_id: productId,
+          product_id_info: {
+            status: Status.ACTIVE,
+          },
         },
-        product_id_info: {
-          id: true,
-          title: true,
-          description: true,
-          price: true,
+        relations: {
+          user_id_info: true,
+          product_id_info: true,
         },
-      },
-    });
+        select: {
+          user_id_info: {
+            id: true,
+            name: true,
+            email: true,
+          },
+          product_id_info: {
+            id: true,
+            title: true,
+            description: true,
+            price: true,
+            status: true,
+          },
+        },
+      });
+    } catch (error) {
+      throw error;
+    }
   }
 
   async findOne(id: number) {
-    const review = await this.reviewRepo.findOne({
-      where: { id },
-      relations: {
-        user_id_info: true,
-        product_id_info: true,
-      },
-      select: {
-        user_id_info: {
-          id: true,
-          name: true,
-          email: true,
+    try {
+      const review = await this.reviewRepo.findOne({
+        where: { id },
+        relations: {
+          user_id_info: true,
+          product_id_info: true,
         },
-        product_id_info: {
-          id: true,
-          title: true,
-          description: true,
-          price: true,
+        select: {
+          user_id_info: {
+            id: true,
+            name: true,
+            email: true,
+          },
+          product_id_info: {
+            id: true,
+            title: true,
+            description: true,
+            price: true,
+            status: true,
+          },
         },
-      },
-    });
-    if (!review) throw new NotFoundException('Review not found');
-    return review;
+      });
+      if (!review) throw new NotFoundException('Review not found');
+      return review;
+    } catch (error) {
+      throw error;
+    }
   }
 
   async update(
@@ -120,25 +150,38 @@ export class ReviewsService {
     updateReviewDto: UpdateReviewDto,
     currentUser: User,
   ) {
-    const review = await this.findOne(id);
-    if (!review) throw new NotFoundException('Review not found');
-    if (review.user_id !== currentUser.id) {
-      throw new BadRequestException("User don't have permission to update");
+    try {
+      const review = await this.findOne(id);
+      if (!review) throw new NotFoundException('Review not found');
+      if (review.user_id !== currentUser.id) {
+        throw new BadRequestException("User don't have permission to update");
+      }
+      delete updateReviewDto.product_id;
+      Object.assign(review, updateReviewDto);
+      return await this.reviewRepo.save(review);
+    } catch (error) {
+      throw error;
     }
-    delete updateReviewDto.product_id;
-    Object.assign(review, updateReviewDto);
-    return await this.reviewRepo.save(review);
   }
 
   async remove(id: number, currentUser: User) {
-    const review = await this.findOne(id);
-    if (
-      review.user_id === currentUser.id ||
-      currentUser.roles.includes(Roles.ADMIN)
-    ) {
-      return await this.reviewRepo.remove(review);
-    } else {
-      throw new BadRequestException("User don't have permission to delete");
+    try {
+      const review = await this.findOne(id);
+      if (
+        review.user_id === currentUser.id ||
+        currentUser.roles.includes(Roles.ADMIN)
+      ) {
+        const deletedReview = await this.reviewRepo.softDelete(review.id);
+        if (deletedReview.affected > 0) {
+          return review;
+        } else {
+          throw new BadRequestException('Review deleted failed ');
+        }
+      } else {
+        throw new BadRequestException("User don't have permission to delete");
+      }
+    } catch (error) {
+      throw error;
     }
   }
 }

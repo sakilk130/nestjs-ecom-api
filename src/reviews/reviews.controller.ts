@@ -22,44 +22,68 @@ export class ReviewsController {
 
   @UseGuards(AuthenticationGuard)
   @Post()
-  create(
+  async create(
     @Body() createReviewDto: CreateReviewDto,
     @CurrentUser() currentUser: User,
   ) {
-    return this.reviewsService.create(createReviewDto, currentUser);
+    return {
+      status: 200,
+      message: 'Review created successfully',
+      data: await this.reviewsService.create(createReviewDto, currentUser),
+    };
   }
 
   @Get('all')
-  findAll() {
-    return this.reviewsService.findAll();
+  async findAll() {
+    return {
+      status: 200,
+      message: 'Success',
+      data: await this.reviewsService.findAll(),
+    };
   }
 
   @Get('all/:productId')
-  findAllByProduct(@Param('productId', ParseIntPipe) productId: number) {
-    return this.reviewsService.findAllByProduct(productId);
+  async findAllByProduct(@Param('productId', ParseIntPipe) productId: number) {
+    return {
+      status: 200,
+      message: 'Success',
+      data: await this.reviewsService.findAllByProduct(productId),
+    };
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.reviewsService.findOne(id);
+  async findOne(@Param('id', ParseIntPipe) id: number) {
+    return {
+      status: 200,
+      message: 'Success',
+      data: await this.reviewsService.findOne(id),
+    };
   }
 
   @UseGuards(AuthenticationGuard)
   @Patch(':id')
-  update(
+  async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() updateReviewDto: UpdateReviewDto,
     @CurrentUser() currentUser: User,
   ) {
-    return this.reviewsService.update(id, updateReviewDto, currentUser);
+    return {
+      status: 200,
+      message: 'Review update successfully',
+      data: await this.reviewsService.update(id, updateReviewDto, currentUser),
+    };
   }
 
   @UseGuards(AuthenticationGuard)
   @Delete(':id')
-  remove(
+  async remove(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() currentUser: User,
   ) {
-    return this.reviewsService.remove(id, currentUser);
+    return {
+      status: 200,
+      message: 'Review deleted successfully',
+      data: await this.reviewsService.remove(id, currentUser),
+    };
   }
 }
